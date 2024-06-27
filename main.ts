@@ -27,8 +27,8 @@ class PipelineRunTest extends Chart {
 
     const pipeline = new PipelineBuilder(this, 'clone-build-push')
       .withDescription('This pipeline closes a repository')
-      .withTask(myTask)
-      .withStringParam(pipelineParam);
+      .withTask(myTask);
+      // .withStringParam(pipelineParam);
     pipeline.buildPipeline({ includeDependencies: true });
 
     new PipelineRunBuilder(this, 'my-pipeline-run', pipeline)
