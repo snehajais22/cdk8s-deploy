@@ -1,0 +1,85 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: cdk8s-pipelines-testing
+spec:
+  workspaces:
+  - name: project
+  params:
+  - name: GIT_SOURCE_URL
+    type: string
+    default: https://github.com/cloud-native-toolkit/cdk8s-pipelines
+    description: Source code repository
+  - name: GIT_SOURCE_REVISION
+    type: string
+    default: develop
+    decriptions: Branch to be used
+  - name: GIT_TEST_URL 
+    type: string
+    default: https://github.com/snehajais22/cdk8s-deploy
+    description: Test file repository
+  - name: GIT_TEST_REVISION
+    type: string
+    default: test
+    description: Branch with test file to run
+
+  tasks:
+  - name: fetch-source
+    taskRef: 
+      name: git-clone
+      kind: ClusterTask
+    params:
+      - name: url
+        value: $(params.GIT_SOURCE_URL)
+      - name: revision
+        value: $(params.GIT_SOURCE_REVISION)
+    workspaces:
+      - name: output
+        workspace: project
+  
+  - name: fetch-test
+    taskRef: 
+      name: git-clone
+      kind: ClusterTask
+    runAfter:
+      - fetch-source
+    params:
+      - name: url
+        value: $(params.GIT_TEST_URL)
+      - name: revision
+        value: $(params.GIT_TEST_REVISION)
+      - name: deleteExisting
+        value: "false"
+      - name: subdirectory
+        value: "test"
+    workspaces:
+      - name: output
+        workspace: project
+
+  - name: build
+    taskRef:
+      name: build-and-synth
+      kind: Task
+    runAfter:
+      - fetch-test
+    params:
+      - name: version
+        value: "18.18.0"
+    workspaces:
+      - name: source
+        workspace: project 
+
+  - name: check
+    runAfter: build
+    taskSpec:
+        steps:
+        - name: check-step
+          image: ubuntu
+          workingdir: /workspace/ws
+          command: ["bash", "-c"]
+          args: ["cat dist/test-pipeline-run.k8s.yaml"]
+        workspaces:
+          - name: ws
+            workspace: project
+
+  

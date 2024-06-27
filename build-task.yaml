@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-and-synth
+spec:
+  workspaces:
+    - name: source
+  params:
+    - name: version
+      description: "node version to use for build"
+  steps:
+    - name: build
+      image: node:$(params.version)
+      workingdir: /workspace/source
+      command:
+      - /bin/bash
+      args:
+      - -c
+      - "npx projen install && npx projen build"
+    - name: synth
+      image: node:$(params.version)
+      workingdir: /workspace/source
+      command:
+      - /bin/bash
+      args:
+      - -c
+      - "npx ts-node test/main.ts"
