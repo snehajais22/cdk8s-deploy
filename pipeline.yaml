@@ -13,7 +13,7 @@ spec:
   - name: GIT_SOURCE_REVISION
     type: string
     default: develop
-    decriptions: Branch to be used
+    description: Branch to be used
   - name: GIT_TEST_URL 
     type: string
     default: https://github.com/snehajais22/cdk8s-deploy
@@ -70,7 +70,8 @@ spec:
         workspace: project 
 
   - name: check
-    runAfter: build
+    runAfter: 
+      - build
     taskSpec:
         steps:
         - name: check-step
@@ -78,8 +79,8 @@ spec:
           workingdir: /workspace/ws
           command: ["bash", "-c"]
           args: ["cat dist/test-pipeline-run.k8s.yaml"]
-        workspaces:
-          - name: ws
-            workspace: project
+    workspaces:
+      - name: ws
+        workspace: project
 
   
