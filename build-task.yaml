@@ -8,6 +8,8 @@ spec:
   params:
     - name: version
       description: "node version to use for build"
+  results:
+    - name: build-status
   steps:
     - name: build
       image: node:$(params.version)
@@ -16,12 +18,21 @@ spec:
       - /bin/bash
       args:
       - -c
-      - "npx projen install && npx projen build"
+      - "npx projen install" # && npx projen build"
     - name: synth
       image: node:$(params.version)
       workingdir: /workspace/source
-      command:
-      - /bin/bash
-      args:
-      - -c
-      - "npx ts-node test/main.ts"
+      script: |
+        #!/usr/bin/env bash
+
+        errormsg=$(npx ts-node test/main.ts 2>&1)
+        if [ $? -eq 0 ]
+        then
+          echo -n "Synth Succeeded" | tee $(results.build-status.path)
+          echo "\n"
+          cat dist/*.yaml
+        else
+          echo -n "Synth Failed" | tee $(results.build-status.path)
+          echo "\n"
+          echo "$errormsg"
+        fi

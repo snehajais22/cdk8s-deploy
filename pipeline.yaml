@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: cdk8s-pipelines-testing
+  name: cdk8s-pipelines-testing-v2
 spec:
   workspaces:
   - name: project
@@ -22,6 +22,10 @@ spec:
     type: string
     default: test
     description: Branch with test file to run
+  - name: namespace
+    type: string
+    description: Namespace to apply the generated test yaml files
+    default: cdk8s-test
 
   tasks:
   - name: fetch-source
@@ -69,18 +73,151 @@ spec:
       - name: source
         workspace: project 
 
-  - name: check
-    runAfter: 
+  - name: deploy-cdk8s-test
+    runAfter:
       - build
+    when:
+      - input: "$(tasks.build.results.build-status)"
+        operator: in
+        values: ["Synth Succeeded"]
+    params:
+      - name: namespace
+        value: "$(params.namespace)"
     taskSpec:
-        steps:
-        - name: check-step
-          image: ubuntu
+      params:
+        - name: namespace
+      steps:
+        - name: oc-create
+          image: quay.io/ibmtz/ibm-pak-ubi:latest
           workingdir: /workspace/ws
-          command: ["bash", "-c"]
-          args: ["cat dist/test-pipeline-run.k8s.yaml"]
+          script: |
+            #!/usr/bin/env bash
+
+            cd dist
+            oc create namespace $(params.namespace)
+            oc project $(params.namespace)
+            oc apply -f '*.yaml'
     workspaces:
       - name: ws
         workspace: project
+  
+  - name: wait-for-deploy
+    timeout: "0h30m00s"
+    runAfter:
+      - deploy-cdk8s-test
+    when:
+      - input: "$(tasks.build.results.build-status)"
+        operator: in
+        values: ["Synth Succeeded"]
+    params:
+      - name: namespace
+        value: "$(params.namespace)"
+    taskSpec:
+      params: 
+       - name: namespace
+      steps:
+        - name: check-pods
+          image: quay.io/ibmtz/ibm-pak-ubi:latest
+          workingdir: /workspace/ws
+          script: |
+            #!/usr/bin/env bash
+            oc project $(params.namespace)
+            echo "waiting for test pods to complete..."
 
+            while true; do
+                # gets status of current pods as array of strings
+                pods=()
+                phases=()
+                while IFS= read -r line; do
+                    read -ra arr <<<"$line"
+                    pods+=("${arr[0]}")
+                    phases+=("${arr[1]}")
+                done < <(oc get pods -n $(params.namespace) -o custom-columns="POD:metadata.name,PHASE:status.phase" --no-headers)
+
+                COMPLETION=1
+                for key in "${!phases[@]}"; do
+                    if [ "${phases[$key]}" == "Failed" ]; then
+                        echo "Pod '${pods[$key]}' has status 'Failed'... exiting"
+                        exit 1
+                    elif [ "${phases[$key]}" == "Succeeded" ]; then
+                        echo "Pod '${pods[$key]}' has status 'Succeeded'."
+                    else
+                        COMPLETION=0
+                    fi
+                done
+                
+                if [ "$COMPLETION" == '1' ]; then
+                    echo "All pods succeeded!"
+                    break
+                fi
+                echo "At least one pod has not completed ... checking again in one minute"
+                sleep 60
+            done
+            echo "All test pods complete!"
+  
+  finally:
+    - name: early-exit
+      params: 
+        - name: namespace
+          value: "$(params.namespace)"
+      when:
+        - input: "$(tasks.build.results.build-status)"
+          operator: in
+          values: ["Synth Failed"]
+      taskSpec:
+        params:
+          - name: namespace
+        steps:
+          - name: clean
+            image: quay.io/ibmtz/ibm-pak-ubi:latest
+            workingdir: /workspace/ws
+            script: |
+              #!/usr/bin/env bash
+
+              oc delete pods -n $(params.namespace)
+              oc delete project $(params.namespace)
+              sleep 180
+              rm -r *
+
+              echo "No manifests generated, pipeline exiting."
+      workspaces:
+      - name: ws
+        workspace: project
+
+    - name: cleanup
+      params: 
+        - name: namespace
+          value: "$(params.namespace)"
+        - name: deployStatus
+          value: "$(tasks.wait-for-deploy.status)"
+      when:
+        - input: "$(tasks.build.results.build-status)"
+          operator: in
+          values: ["Synth Succeeded"]
+      taskSpec:
+        params:
+          - name: namespace
+          - name: deployStatus
+        steps:
+          - name: script
+            image: quay.io/ibmtz/ibm-pak-ubi:latest
+            workingdir: /workspace/ws
+            script: |
+              #!/usr/bin/env bash
+
+              if [ "$(params.deployStatus)" = "Succeeded" ]; then
+                echo "Tests were deployed and completed successfully."
+              else
+                echo "At least one test resulted in failure or timed out. See task logs for details."
+              fi
+
+              oc delete project $(params.namespace)
+              sleep 180
+
+              rm -r *
+
+              echo "Clean up complete"
+      workspaces:
+      - name: ws
+        workspace: project
   

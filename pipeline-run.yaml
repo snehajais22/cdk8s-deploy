@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: cdk8s-pipelines-testing-run-
+spec:
+  pipelineRef:
+    name: cdk8s-pipelines-testing-v2
+  params:
+    - name: GIT_SOURCE_URL
+      value: https://github.com/cloud-native-toolkit/cdk8s-pipelines
+    - name: GIT_SOURCE_REVISION
+      value: develop
+    - name: GIT_TEST_URL
+      value: https://github.com/snehajais22/cdk8s-deploy
+    - name: GIT_TEST_REVISION
+      value: test
+    - name: namespace
+      value: cdk8s-test
+  podTemplate:
+    securityContext:
+      fsGroup: 65532
+  workspaces:
+    - name: project
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
