@@ -1,4 +1,4 @@
-import { App, Chart } from 'cdk8s';
+import { App, Chart, Size } from 'cdk8s';
 import { ChartProps } from 'cdk8s/lib/chart';
 import { PersistentVolumeClaim, PersistentVolumeClaimProps, PersistentVolumeAccessMode } from 'cdk8s-plus-27';
 import { Construct } from 'constructs';
@@ -32,9 +32,9 @@ class PipelineRunTest extends Chart {
         .withImage('ubuntu')
         .fromScriptData('#!/usr/bin/env bash\necho Hi'));
 
-    const pvcProps : PersistentVolumeClaimProps = { metadata: { name: 'datapvc' }, accessModes: [PersistentVolumeAccessMode.READ_WRITE_ONCE] };
+    const pvcProps : PersistentVolumeClaimProps = { metadata: { name: 'datapvc' }, accessModes: [PersistentVolumeAccessMode.READ_WRITE_ONCE], storage: Size.gibibytes(1) };
     new PersistentVolumeClaim(this, 'dataPVC', pvcProps);
-    
+
     const pipeline = new PipelineBuilder(this, 'clone-build-push')
       .withDescription('This pipeline closes a repository')
       .withTask(myTask)
@@ -43,7 +43,7 @@ class PipelineRunTest extends Chart {
 
     new PipelineRunBuilder(this, 'my-pipeline-run', pipeline)
       .withRunParam('repo-url', 'https://github.com/exmaple/my-repo')
-      .withWorkspace('shared-data', 'datapvc', 'my-shared-data')
+      .withWorkspace('shared-data', 'dataPVC', 'my-shared-data')
       .buildPipelineRun({ includeDependencies: true });
   }
 }
