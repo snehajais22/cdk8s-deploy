@@ -1,5 +1,6 @@
 import { App, Chart } from 'cdk8s';
 import { ChartProps } from 'cdk8s/lib/chart';
+import { PersistentVolumeClaim, PersistentVolumeClaimProps } from 'cdk8s-plus-27';
 import { Construct } from 'constructs';
 // @ts-ignore
 import {
@@ -31,6 +32,9 @@ class PipelineRunTest extends Chart {
         .withImage('ubuntu')
         .fromScriptData('#!/usr/bin/env bash\necho Hi'));
 
+    const pvcProps : PersistentVolumeClaimProps = { metadata: { name: 'dataPVC' } };
+    new PersistentVolumeClaim(this, 'dataPVC', pvcProps);
+    
     const pipeline = new PipelineBuilder(this, 'clone-build-push')
       .withDescription('This pipeline closes a repository')
       .withTask(myTask)
