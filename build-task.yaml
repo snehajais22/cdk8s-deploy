@@ -29,11 +29,11 @@ spec:
         if [ $? -eq 0 ]
         then
           echo -n "Synth Succeeded" | tee $(results.build-status.path)
-          echo "\n"
+          echo '\n'
           cat dist/*.yaml
         else
           echo -n "Synth Failed" | tee $(results.build-status.path)
-          echo "\n"
+          echo '\n'
           echo "$errormsg"
           exit 1
         fi

@@ -102,7 +102,7 @@ spec:
             #!/usr/bin/env bash
 
             cd dist
-            oc create namespace $(params.namespace)
+            oc create namespace $(params.namespace) >/dev/null
             oc project $(params.namespace)
             oc apply -f '*.yaml'
     workspaces:
@@ -134,7 +134,7 @@ spec:
             oc project $(params.namespace)
             echo "waiting for test pods to complete..."
 
-            oc label pods --all app=test
+            oc label pods --all app=test >/dev/null
             for (( n = 1; n <= $(($(params.timelimit))); n++ )) ; do
               # gets status of current pods as array of strings
               pods=()
@@ -193,12 +193,11 @@ spec:
             script: |
               #!/usr/bin/env bash
 
-              oc delete pods -n $(params.namespace)
               oc delete project $(params.namespace)
               sleep 180
               rm -r *
 
-              [ -z "$(params.repo)" ] && echo "Push to $(params.repo) resulted in failed cdk8s synth."
+              [ -n "$(params.repo)" ] && echo "Push to $(params.repo) resulted in failed cdk8s synth."
               echo "No manifests generated, pipeline exiting."
       workspaces:
       - name: ws
@@ -228,11 +227,11 @@ spec:
             script: |
               #!/usr/bin/env bash
               
-              [ -z "$(params.repo)" ] && echo "Results from push to $(params.repo):"
+              [ -n "$(params.repo)" ] && echo "Results from push to $(params.repo):"
               if [ "$(params.deployStatus)" = "Succeeded" ]; then
                 echo "Tests were deployed and completed successfully."
               else
-                echo "At least one test resulted in failure or timed out. See task logs for details."
+                echo "At least one test failed or timed out. See task logs for details."
               fi
 
               oc delete project $(params.namespace)
