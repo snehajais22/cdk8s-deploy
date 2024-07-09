@@ -30,6 +30,10 @@ spec:
     type: string
     description: Time limit, in minutes, for test pods to complete
     default: '15'
+  - name: pushedrepo
+    type: string
+    description: Name of repository whose push event triggered the pipeline
+    default: ''
 
   tasks:
   - name: fetch-source
@@ -171,6 +175,8 @@ spec:
       params: 
         - name: namespace
           value: "$(params.namespace)"
+        - name: repo
+          value: "$(params.pushedrepo)"
       when:
         - input: "$(tasks.build.results.build-status)"
           operator: in
@@ -178,6 +184,7 @@ spec:
       taskSpec:
         params:
           - name: namespace
+          - name: repo
         steps:
           - name: clean
             image: quay.io/ibmtz/ibm-pak-ubi:latest
@@ -190,6 +197,7 @@ spec:
               sleep 180
               rm -r *
 
+              [ -z "$(params.repo)" ] && echo "Push to $(params.repo) resulted in failed cdk8s synth."
               echo "No manifests generated, pipeline exiting."
       workspaces:
       - name: ws
@@ -201,6 +209,8 @@ spec:
           value: "$(params.namespace)"
         - name: deployStatus
           value: "$(tasks.wait-for-deploy.status)"
+        - name: repo
+          value: "$(params.pushedrepo)"
       when:
         - input: "$(tasks.build.results.build-status)"
           operator: in
@@ -209,13 +219,15 @@ spec:
         params:
           - name: namespace
           - name: deployStatus
+          - name: repo
         steps:
           - name: script
             image: quay.io/ibmtz/ibm-pak-ubi:latest
             workingdir: /workspace/ws
             script: |
               #!/usr/bin/env bash
-
+              
+              [ -z "$(params.repo)" ] && echo "Results from push to $(params.repo):"
               if [ "$(params.deployStatus)" = "Succeeded" ]; then
                 echo "Tests were deployed and completed successfully."
               else
