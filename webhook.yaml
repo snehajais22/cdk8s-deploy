@@ -28,7 +28,7 @@ spec:
           - name: namespace
             value: cdk8s-test
           - name: pushedrepo
-            value: tt.params.git-repo-name
+            value: $(tt.params.git-repo-name)
         podTemplate:
           securityContext:
             fsGroup: 65532
