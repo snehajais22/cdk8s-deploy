@@ -110,7 +110,6 @@ spec:
         workspace: project
   
   - name: wait-for-deploy
-    timeout: "0h30m00s"
     runAfter:
       - deploy-cdk8s-test
     when:
