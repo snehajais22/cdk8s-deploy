@@ -54,6 +54,12 @@ spec:
         - kind: ClusterTriggerBinding
           ref: github-push
       name: trigger-1
+      interceptors:
+        - ref:
+            name: cel
+          params:
+          - name: filter
+            value: 'body[ref].contains(develop) || body[ref].contains(test)'
       template:
         ref: cdk8s-pipelines-testing-triggertemplate
 ---
