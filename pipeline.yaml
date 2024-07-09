@@ -135,37 +135,36 @@ spec:
             echo "waiting for test pods to complete..."
 
             oc label pods --all app=test
+            for (( n = 1; n <= $(($(params.timelimit))); n++ )) ; do
+              # gets status of current pods as array of strings
+              pods=()
+              phases=()
+              while IFS= read -r line; do
+                  read -ra arr <<<"$line"
+                  pods+=("${arr[0]}")
+                  phases+=("${arr[1]}")
+              done < <(oc get pods -n $(params.namespace) -o custom-columns="POD:metadata.name,PHASE:status.phase" --no-headers)
 
-            for n in {1..$(($(params.timelimit)))}; do
-                # gets status of current pods as array of strings
-                pods=()
-                phases=()
-                while IFS= read -r line; do
-                    read -ra arr <<<"$line"
-                    pods+=("${arr[0]}")
-                    phases+=("${arr[1]}")
-                done < <(oc get pods -n $(params.namespace) -o custom-columns="POD:metadata.name,PHASE:status.phase" --no-headers)
-
-                COMPLETION=1
-                for key in "${!phases[@]}"; do
-                    if [ "${phases[$key]}" == "Failed" ]; then
-                        echo "Pod '${pods[$key]}' has status 'Failed'... printing logs and exiting"
-                        oc logs ${pods[$key]} --all-containers
-                        exit 1
-                    elif [ "${phases[$key]}" == "Succeeded" ]; then
-                        echo "Pod '${pods[$key]}' has status 'Succeeded'."
-                    else
-                        COMPLETION=0
-                    fi
-                done
-                
-                if [ "$COMPLETION" == '1' ]; then
-                    echo "All test pods succeeded! Printing logs..."
-                    oc logs -l app=test --all-containers --prefix
-                    exit 0
-                fi
-                echo "At least one pod has not completed ... checking again in one minute"
-                sleep 60
+              COMPLETION=1
+              for key in "${!phases[@]}"; do
+                  if [ "${phases[$key]}" == "Failed" ]; then
+                      echo "Pod '${pods[$key]}' has status 'Failed'... printing logs and exiting"
+                      oc logs ${pods[$key]} --all-containers
+                      exit 1
+                  elif [ "${phases[$key]}" == "Succeeded" ]; then
+                      echo "Pod '${pods[$key]}' has status 'Succeeded'."
+                  else
+                      COMPLETION=0
+                  fi
+              done
+              
+              if [ "$COMPLETION" == '1' ]; then
+                  echo "All test pods succeeded! Printing logs..."
+                  oc logs -l app=test --all-containers --prefix
+                  exit 0
+              fi
+              echo "At least one pod has not completed ... checking again in one minute"
+              sleep 60
             done
             oc get pod
             echo "At least one pod did not complete in $(params.timelimit) minutes ... exiting"
