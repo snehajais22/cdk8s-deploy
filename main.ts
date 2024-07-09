@@ -30,7 +30,7 @@ class PipelineRunTest extends Chart {
       .withStep(new TaskStepBuilder()
         .withName('step')
         .withImage('ubuntu')
-        .fromScriptData('#!/usr/bin/env bash\necho $(params.url)\necho Anotha one'));
+        .fromScriptData('#!/usr/bin/env bash\necho $(params.url)\necho Done'));
 
     const pvcProps : PersistentVolumeClaimProps = { metadata: { name: 'datapvc' }, accessModes: [PersistentVolumeAccessMode.READ_WRITE_ONCE], storage: Size.gibibytes(1) };
     new PersistentVolumeClaim(this, 'datapvc', pvcProps);
@@ -43,7 +43,7 @@ class PipelineRunTest extends Chart {
 
     new PipelineRunBuilder(this, 'my-pipeline-run', pipeline)
       .withRunParam('repo-url', 'https://github.com/exmaple/my-repo')
-      .withWorkspace('shared-data', 'datapvc', 'my-shared-data')
+      // .withWorkspace('shared-data', 'datapvc', 'my-shared-data')
       .buildPipelineRun({ includeDependencies: true });
   }
 }
