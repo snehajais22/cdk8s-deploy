@@ -16,6 +16,8 @@ spec:
       value: test
     - name: namespace
       value: cdk8s-test
+    - name: timelimit
+      value: '15'
   podTemplate:
     securityContext:
       fsGroup: 65532

@@ -26,6 +26,10 @@ spec:
     type: string
     description: Namespace to apply the generated test yaml files
     default: cdk8s-test
+  - name: timelimit
+    type: string
+    description: Time limit, in minutes, for test pods to complete
+    default: '15'
 
   tasks:
   - name: fetch-source
@@ -112,9 +116,12 @@ spec:
     params:
       - name: namespace
         value: "$(params.namespace)"
+      - name: timelimit
+        value: $(params.timelimit)
     taskSpec:
       params: 
        - name: namespace
+       - name: timelimit
       steps:
         - name: check-pods
           image: quay.io/ibmtz/ibm-pak-ubi:latest
@@ -124,7 +131,7 @@ spec:
             oc project $(params.namespace)
             echo "waiting for test pods to complete..."
 
-            while true; do
+            for n in {1..$(($(params.timelimit)))}; do
                 # gets status of current pods as array of strings
                 pods=()
                 phases=()
@@ -137,7 +144,8 @@ spec:
                 COMPLETION=1
                 for key in "${!phases[@]}"; do
                     if [ "${phases[$key]}" == "Failed" ]; then
-                        echo "Pod '${pods[$key]}' has status 'Failed'... exiting"
+                        echo "Pod '${pods[$key]}' has status 'Failed'... printing logs and exiting"
+                        oc logs ${pods[$key]} --all-containers
                         exit 1
                     elif [ "${phases[$key]}" == "Succeeded" ]; then
                         echo "Pod '${pods[$key]}' has status 'Succeeded'."
@@ -147,13 +155,16 @@ spec:
                 done
                 
                 if [ "$COMPLETION" == '1' ]; then
-                    echo "All pods succeeded!"
-                    break
+                    echo "All test pods succeeded!"
+                    exit 0
                 fi
                 echo "At least one pod has not completed ... checking again in one minute"
                 sleep 60
             done
-            echo "All test pods complete!"
+            oc get pod
+            echo "At least one pod did not complete in $(params.timelimit) minutes ... exiting"
+            exit 1
+            
   
   finally:
     - name: early-exit

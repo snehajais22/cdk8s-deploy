@@ -35,4 +35,5 @@ spec:
           echo -n "Synth Failed" | tee $(results.build-status.path)
           echo "\n"
           echo "$errormsg"
+          exit 1
         fi
