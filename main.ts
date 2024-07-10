@@ -13,7 +13,7 @@ import {
   fromPipelineParam,
 } from '../src';
 
-class PipelineTest extends Chart {
+class PipelineRunTest extends Chart {
   constructor(scope: Construct, id: string, props?: ChartProps) {
     super(scope, id, props);
 
@@ -21,6 +21,7 @@ class PipelineTest extends Chart {
       .withDefaultValue('');
 
     const myTask = new TaskBuilder(this, 'clone-git')
+      .specifyRunAfter([])
       .withName('fetch-source')
       .withWorkspace(new WorkspaceBuilder('output')
         .withBinding('shared-data')
@@ -31,23 +32,30 @@ class PipelineTest extends Chart {
         .withName('step')
         .withImage('ubuntu')
         .fromScriptData('#!/usr/bin/env bash\necho $(params.url)\necho Done'));
+    const myTask2 = new TaskBuilder(this, 'task-two')
+      .specifyRunAfter(['fetch-source'])
+      .withStep(new TaskStepBuilder()
+        .withName('echo')
+        .withImage('ubuntu')
+        .fromScriptData('#!/usr/bin/env bash\necho running after'));
 
     const pvcProps : PersistentVolumeClaimProps = { metadata: { name: 'datapvc' }, accessModes: [PersistentVolumeAccessMode.READ_WRITE_ONCE], storage: Size.gibibytes(1) };
     new PersistentVolumeClaim(this, 'datapvc', pvcProps);
 
     const pipeline = new PipelineBuilder(this, 'clone-build-push')
       .withDescription('This pipeline closes a repository')
+      .withTask(myTask2)
       .withTask(myTask)
       .withStringParam(pipelineParam);
     pipeline.buildPipeline({ includeDependencies: true });
 
-    // new PipelineRunBuilder(this, 'my-pipeline-run', pipeline)
-    //   .withRunParam('repo-url', 'https://github.com/exmaple/my-repo')
-    //   .withWorkspace('shared-data', 'datapvc', 'my-shared-data')
-    //   .buildPipelineRun({ includeDependencies: true });
+    new PipelineRunBuilder(this, 'my-pipeline-run', pipeline)
+      .withRunParam('repo-url', 'https://github.com/exmaple/my-repo')
+      .withWorkspace('shared-data', 'datapvc', 'my-shared-data')
+      .buildPipelineRun({ includeDependencies: true });
   }
 }
 
 const app = new App();
-new PipelineTest(app, 'test-pipeline');
+new PipelineRunTest(app, 'test-pipeline-run');
 app.synth();
