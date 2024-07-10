@@ -13,7 +13,7 @@ import {
   fromPipelineParam,
 } from '../src';
 
-class PipelineRunTest extends Chart {
+class PipelineTest extends Chart {
   constructor(scope: Construct, id: string, props?: ChartProps) {
     super(scope, id, props);
 
@@ -41,13 +41,13 @@ class PipelineRunTest extends Chart {
       .withStringParam(pipelineParam);
     pipeline.buildPipeline({ includeDependencies: true });
 
-    new PipelineRunBuilder(this, 'my-pipeline-run', pipeline)
-      .withRunParam('repo-url', 'https://github.com/exmaple/my-repo')
-      // .withWorkspace('shared-data', 'datapvc', 'my-shared-data')
-      .buildPipelineRun({ includeDependencies: true });
+    // new PipelineRunBuilder(this, 'my-pipeline-run', pipeline)
+    //   .withRunParam('repo-url', 'https://github.com/exmaple/my-repo')
+    //   .withWorkspace('shared-data', 'datapvc', 'my-shared-data')
+    //   .buildPipelineRun({ includeDependencies: true });
   }
 }
 
 const app = new App();
-new PipelineRunTest(app, 'test-pipeline-run');
+new PipelineTest(app, 'test-pipeline');
 app.synth();
