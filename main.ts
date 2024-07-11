@@ -31,7 +31,7 @@ class PipelineRunTest extends Chart {
       .withStep(new TaskStepBuilder()
         .withName('step')
         .withImage('ubuntu')
-        .fromScriptData('#!/usr/bin/env bash\necho $(params.url)\necho Done'));
+        .fromScriptData('#!/usr/bin/env bash\necho $(params.url)\necho Again!'));
     const myTask2 = new TaskBuilder(this, 'task-two')
       .specifyRunAfter(['fetch-source'])
       .withStep(new TaskStepBuilder()
