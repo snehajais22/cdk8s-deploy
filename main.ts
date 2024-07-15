@@ -37,7 +37,7 @@ class PipelineRunTest extends Chart {
       .withStep(new TaskStepBuilder()
         .withName('echo')
         .withImage('ubuntu')
-        .fromScriptData('#!/usr/bin/env bash\necho running after'));
+        .fromScriptData('#!/usr/bin/env bash\necho after'));
 
     const pvcProps : PersistentVolumeClaimProps = { metadata: { name: 'datapvc' }, accessModes: [PersistentVolumeAccessMode.READ_WRITE_ONCE], storage: Size.gibibytes(1) };
     new PersistentVolumeClaim(this, 'datapvc', pvcProps);
