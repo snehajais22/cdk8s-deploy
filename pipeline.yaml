@@ -198,8 +198,6 @@ spec:
             script: |
               #!/usr/bin/env bash
 
-              oc delete project $(params.namespace)
-              sleep 180
               rm -r *
 
               [ -n "$(params.repo)" ] && echo "Push to $(params.repo) resulted in failed cdk8s synth."
