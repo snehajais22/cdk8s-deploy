@@ -134,7 +134,6 @@ spec:
             oc project $(params.namespace)
             echo "waiting for test pods to complete..."
 
-            oc label pods --all app=test
             for (( n = 1; n <= $(($(params.timelimit))); n++ )) ; do
               # gets status of current pods as array of strings
               pods=()
@@ -160,7 +159,7 @@ spec:
               
               if [ "$COMPLETION" == '1' ]; then
                   echo "All test pods succeeded! Printing logs..."
-                  oc get pod
+                  oc label pods --all app=test
                   oc logs -l app=test --all-containers --prefix
                   exit 0
               fi
