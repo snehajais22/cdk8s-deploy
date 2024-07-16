@@ -93,6 +93,6 @@ class PipelineWithSimilarTasks extends Chart {
 }
 
 const app = new App();
-//new PipelineRunTest(app, 'test-pipeline-run');
-new PipelineWithSimilarTasks(app, 'test-pipeline-similar-tasks');
+new PipelineRunTest(app, 'test-pipeline-run');
+//new PipelineWithSimilarTasks(app, 'test-pipeline-similar-tasks');
 app.synth();
