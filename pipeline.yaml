@@ -134,8 +134,8 @@ spec:
             oc project $(params.namespace)
             echo "waiting for test pods to complete..."
 
-            oc label pods --all app=test >/dev/null
             for (( n = 1; n <= $(($(params.timelimit))); n++ )) ; do
+              oc label pods --all app=test
               # gets status of current pods as array of strings
               pods=()
               phases=()
