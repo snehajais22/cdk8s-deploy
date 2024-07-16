@@ -158,9 +158,14 @@ spec:
               done
               
               if [ "$COMPLETION" == '1' ]; then
-                  echo "All test pods succeeded! Printing logs..."
-                  oc label pods --all app=test
-                  oc logs -l app=test --all-containers --prefix
+                  echo "All test pods succeeded!"
+                  # oc label pods --all app=test >/dev/null
+                  # oc logs -l app=test --all-containers --prefix
+                  for name in "${pods[@]}"; do
+                    echo "Printing logs for pod $name ..."
+                    oc logs $name --all-containers
+                    echo
+                  done
                   exit 0
               fi
               echo "At least one pod has not completed ... checking again in one minute"
