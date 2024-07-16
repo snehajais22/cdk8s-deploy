@@ -71,15 +71,15 @@ class PipelineWithSimilarTasks extends Chart {
       .withValue(fromPipelineParam(pipelineParam));
 
     const myTask = new TaskBuilder(this, 'fetch-source')
-      .referencingTask('fetch-source')
-      .withName('git-clone')
+      .referencingTask('git-clone')
+      .withName('fetch-source')
       .withWorkspace(myWorkspace)
       .withStringParam(urlParam)
     ;
 
     const myTask2 = new TaskBuilder(this, 'fetch-source-2')
-      .referencingTask('fetch-source')
-      .withName('git-clone-2')
+      .referencingTask('git-clone')
+      .withName('fetch-source-2')
       .withWorkspace(myWorkspace)
       .withStringParam(urlParam);
 
