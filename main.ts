@@ -56,43 +56,6 @@ class PipelineRunTest extends Chart {
   }
 }
 
-// class PipelineWithSimilarTasks extends Chart {
-//   constructor(scope: Construct, id: string, props?: ChartProps) {
-//     super(scope, id, props);
-
-//     const myWorkspace = new WorkspaceBuilder('output')
-//       .withDescription('The files cloned by the task')
-//       .withBinding('shared-data');
-
-//     const pipelineParam = new ParameterBuilder('repo-url')
-//       .withDefaultValue('');
-
-//     const urlParam = new ParameterBuilder('url')
-//       .withValue(fromPipelineParam(pipelineParam));
-
-//     const myTask = new TaskBuilder(this, 'fetch-source')
-//       .referencingTask('git-clone')
-//       .withName('fetch-source')
-//       .withWorkspace(myWorkspace)
-//       .withStringParam(urlParam)
-//     ;
-
-//     const myTask2 = new TaskBuilder(this, 'fetch-source-2')
-//       .referencingTask('git-clone')
-//       .withName('fetch-source-2')
-//       .withWorkspace(myWorkspace)
-//       .withStringParam(urlParam);
-
-//     new PipelineBuilder(this, 'clone-build-push')
-//       .withDescription('This pipeline closes a repository, builds a Docker image, etc.')
-//       .withTask(myTask)
-//       .withTask(myTask2)
-//       .withStringParam(pipelineParam)
-//       .buildPipeline({ includeDependencies: true });
-//   }
-// }
-
 const app = new App();
 new PipelineRunTest(app, 'test-pipeline-run');
-//new PipelineWithSimilarTasks(app, 'test-pipeline-similar-tasks');
 app.synth();
