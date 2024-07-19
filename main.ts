@@ -88,5 +88,5 @@ class PipelineTestWithResolver extends Chart {
 
 const app = new App();
 // new PipelineRunTest(app, 'test-pipeline-run');
-new PipelineTestWithResolver(app, 'pipeline-resolver');
+new PipelineTestWithResolver(app, 'pipeline-with-resolver');
 app.synth();
