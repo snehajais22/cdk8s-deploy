@@ -56,6 +56,37 @@ class PipelineRunTest extends Chart {
   }
 }
 
+class PipelineTestWithResolver extends Chart {
+  constructor(scope: Construct, id: string, props?: ChartProps) {
+    super(scope, id, props);
+
+    const myWorkspace = new WorkspaceBuilder('output')
+      .withDescription('The files cloned by the task')
+      .withBinding('shared-data');
+
+    const pipelineParam = new ParameterBuilder('repo-url')
+      .withDefaultValue('');
+
+    const urlParam = new ParameterBuilder('url')
+      .withValue(fromPipelineParam(pipelineParam));
+
+    const resolver = new ClusterTaskResolver('git-clone', 'default');
+
+    const myTask = new TaskBuilder(this, 'fetch-source')
+      .referencingTask(resolver)
+      .withWorkspace(myWorkspace)
+      .withStringParam(urlParam)
+    ;
+
+    new PipelineBuilder(this, 'clone-build-push')
+      .withDescription('This pipeline closes a repository, builds a Docker image, etc.')
+      .withTask(myTask)
+      .withStringParam(pipelineParam)
+      .buildPipeline({ includeDependencies: true });
+  }
+}
+
 const app = new App();
-new PipelineRunTest(app, 'test-pipeline-run');
+// new PipelineRunTest(app, 'test-pipeline-run');
+new PipelineTestWithResolver(app, 'pipeline-resolver');
 app.synth();
